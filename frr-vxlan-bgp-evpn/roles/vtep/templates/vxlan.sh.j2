@@ -1,0 +1,19 @@
+#!/bin/bash
+
+{% for vni_interface in vnis_interface %}
+  {% set vni = vni_interface.split('/')[0] %}
+  {% set interface = vni_interface.split('/')[1] %}
+
+  #Create VXLAN interface
+  ip link add vxlan{{vni}} type vxlan id {{vni}} dstport 4789 local {{vtep_ip}} nolearning
+  #Create bridge
+  brctl addbr br{{vni}}
+  brctl addif br{{vni}} vxlan{{vni}}
+  brctl stp br{{vni}} off
+  ip link set up dev br{{vni}}
+  ip link set up dev vxlan{{vni}}
+  ifconfig br{{vni}} mtu 1400
+  ifconfig vxlan{{vni}} mtu 1400
+  brctl addif br{{vni}} {{interface}}
+  ifconfig {{interface}} mtu 1400 up
+{% endfor %}

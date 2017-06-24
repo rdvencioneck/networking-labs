@@ -1,0 +1,35 @@
+frr defaults traditional
+no log monitor
+no log monitor
+no log monitor
+username cumulus nopassword
+!
+service integrated-vtysh-config
+!
+log file /var/log/frr/frr.log
+!
+log syslog informational
+!
+log timestamp precision 6
+!
+router bgp {{asn}}
+ bgp router-id {{vtep_ip}}
+ no bgp default ipv4-unicast
+ neighbor ebserh peer-group
+ neighbor ebserh remote-as {{asn}}
+ neighbor ebserh update-source dummy0
+ neighbor ebserh capability extended-nexthop
+ {% for rr in RRs %}
+ neighbor {{rr}} peer-group ebserh
+ {% endfor %}
+ !
+ address-family l2vpn evpn
+  neighbor ebserh activate
+  advertise-all-vni
+ exit-address-family
+ vnc defaults
+  response-lifetime 3600
+  exit-vnc
+!
+line vty
+!

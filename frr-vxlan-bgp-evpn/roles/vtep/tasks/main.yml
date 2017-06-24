@@ -1,0 +1,24 @@
+---
+  - name: Copy vxlan script
+    template:
+      src: vxlan.sh.j2
+      dest: /src/frr/vxlan.sh
+      owner: root
+      group: root
+      mode: 0770
+
+  - name: Create vxlan
+    command: /src/frr/vxlan.sh
+
+  - name: Set Router config
+    template:
+      src: frr.conf.j2
+      dest: /etc/frr/frr.conf
+      owner: root
+      group: root
+      mode: 0644
+
+  - name: Restart frr service
+    systemd:
+      state: restarted
+      name: frr
