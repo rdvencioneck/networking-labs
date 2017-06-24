@@ -1,0 +1,153 @@
+---
+  - name: Stop Apparmor
+    service:
+      name: apparmor
+      state: stopped
+
+  - name: Remove Apparmor service
+    service:
+      name: apparmor
+      enabled: false
+
+  - name: Install dependencies
+    apt: name={{item}} state=installed
+    with_items:
+      - git
+      - autoconf
+      - automake
+      - libtool
+      - make
+      - gawk
+      - libreadline-dev
+      - texinfo
+      - dejagnu
+      - pkg-config
+      - libpam0g-dev
+      - libjson-c-dev
+      - bison
+      - flex
+      - python-pytest
+      - libc-ares-dev
+      - python3-dev
+      - libsystemd-dev
+
+  - name: Add group frr with gid 92
+    group:
+      name: frr
+      gid: 92
+
+  - name: Add system group frrvty with gid 85
+    group:
+      name: frrvty
+      gid: 85
+      system: yes
+
+  - name: Add user frr
+    user:
+      name: frr
+      system: yes
+      groups:
+        - frr
+        - frrvty
+      home: /var/run/frr/
+      comment: "FRR suite"
+      shell: /sbin/nologin
+
+  - git:
+      repo: 'https://github.com/vivek-cumulus/frr.git'
+      dest: /src/frr/
+      version: evpn
+      clone: yes
+
+  - command: chdir=/src/frr/ ./bootstrap.sh
+
+  - command: chdir=/src/frr/ ./configure --prefix=/usr --enable-exampledir=/usr/share/doc/frr/examples/ --localstatedir=/var/run/frr --sbindir=/usr/lib/frr --sysconfdir=/etc/frr --enable-pimd --enable-watchfrr --enable-ospfclient=yes --enable-ospfapi=yes --enable-multipath=64 --enable-user=frr --enable-group=frr --enable-vty-group=frrvty --enable-configfile-mask=0640 --enable-logfile-mask=0640 --enable-rtadv --enable-tcp-zebra --enable-fpm --enable-systemd=yes --with-pkg-git-version --with-pkg-extra-version=-EVPN
+
+#  - command: chdir=/src/frr/ ./configure >
+#    --prefix=/usr
+#    --enable-exampledir=/usr/share/doc/frr/examples/
+#    --localstatedir=/var/run/frr
+#    --sbindir=/usr/lib/frr
+#    --sysconfdir=/etc/frr
+#    --enable-pimd
+#    --enable-watchfrr
+#    --enable-ospfclient=yes
+#    --enable-ospfapi=yes
+#    --enable-multipath=64
+#    --enable-user=frr
+#    --enable-group=frr
+#    --enable-vty-group=frrvty
+#    --enable-configfile-mask=0640
+#    --enable-logfile-mask=0640
+#    --enable-rtadv
+#    --enable-tcp-zebra
+#    --enable-fpm
+#    --enable-systemd=yes
+#    --with-pkg-git-version
+#    --with-pkg-extra-version=-EVPN
+
+  - command: chdir=/src/frr/ {{ item }}
+    with_items:
+      - make
+      - make check
+      - make install
+
+  - name: Add mappings to /etc/iproute2/rt_protos
+    blockinfile:
+      path: /etc/iproute2/rt_protos
+      block: |
+        {{ item.port }} {{ item.proto }}
+      marker: "# {mark} ANSIBLE MANAGED BLOCK {{ item.port }}"
+    with_items:
+      - { port: 186, proto: bgp }
+      - { port: 187, proto: isis }
+      - { port: 188, proto: ospf }
+      - { port: 189, proto: rip }
+      - { port: 190, proto: ripng }
+      - { port: 191, proto: static }
+
+  - command: chdir=/src/frr/ {{ item }}
+    with_items:
+      - install -m 755 -o frr -g frr -d /var/log/frr
+      - install -m 775 -o frr -g frrvty -d /etc/frr
+      - install -m 640 -o frr -g frr /dev/null /etc/frr/zebra.conf
+      - install -m 640 -o frr -g frr /dev/null /etc/frr/bgpd.conf
+      - install -m 640 -o frr -g frr /dev/null /etc/frr/ospfd.conf
+      - install -m 640 -o frr -g frr /dev/null /etc/frr/ospf6d.conf
+      - install -m 640 -o frr -g frr /dev/null /etc/frr/isisd.conf
+      - install -m 640 -o frr -g frr /dev/null /etc/frr/ripd.conf
+      - install -m 640 -o frr -g frr /dev/null /etc/frr/ripngd.conf
+      - install -m 640 -o frr -g frr /dev/null /etc/frr/pimd.conf
+      - install -m 640 -o frr -g frr /dev/null /etc/frr/ldpd.conf
+      - install -m 640 -o frr -g frr /dev/null /etc/frr/nhrpd.conf
+      - install -m 640 -o frr -g frrvty /dev/null /etc/frr/vtysh.conf
+      - install -m 644 tools/frr.service /etc/systemd/system/frr.service
+      - install -m 644 tools/etc/default/frr /etc/default/frr
+      - install -m 644 tools/etc/frr/daemons.conf /etc/frr/daemons.conf
+      - install -m 644 tools/etc/frr/frr.conf /etc/frr/frr.conf
+      - install -m 644 tools/etc/frr/daemons.conf /etc/frr/debian.conf
+      - install -m 644 -o frr -g frr tools/etc/frr/vtysh.conf /etc/frr/vtysh.conf
+
+  - copy:
+      src: daemons
+      dest: /etc/frr/daemons
+      owner: frr
+      group: frr
+      mode: 0640
+
+  - sysctl:
+      name: "{{ item }}"
+      value: 1
+      sysctl_set: yes
+      state: present
+      reload: yes
+    with_items:
+      - net.ipv4.ip_forward
+      - net.ipv6.conf.all.forwarding
+
+  - name: Start and enable frr service
+    systemd:
+      state: started
+      daemon_reload: yes
+      name: frr
+      enabled: yes
