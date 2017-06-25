@@ -1,0 +1,38 @@
+frr defaults traditional
+no log monitor
+no log monitor
+no log monitor
+username cumulus nopassword
+!
+service integrated-vtysh-config
+!
+log file /var/log/frr/frr.log
+!
+log syslog informational
+!
+log timestamp precision 6
+!
+router bgp {{asn}}
+ bgp router-id {{rr_ip}}
+ bgp log-neighbor-changes
+ no bgp default ipv4-unicast
+ bgp cluster-id {{rr_ip}}
+ neighbor fabric peer-group
+ neighbor fabric remote-as {{asn}}
+ neighbor fabric update-source {{rr_ip}}
+ neighbor fabric capability extended-nexthop
+ {% for vt in VTEPs %}
+ neighbor {{vt}} peer-group fabric
+ {% endfor %}
+ bgp listen range {{range_network}} peer-group fabric
+ !
+ address-family l2vpn evpn
+  neighbor fabric activate
+  neighbor fabric route-reflector-client
+ exit-address-family
+ vnc defaults
+  response-lifetime 3600
+  exit-vnc
+!
+line vty
+!
