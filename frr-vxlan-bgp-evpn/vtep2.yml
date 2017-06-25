@@ -1,0 +1,17 @@
+---
+  - name: VTEP2
+    vars:
+      vtep_ip: 10.11.12.20
+      asn: 65000
+      RRs:
+        - 10.11.12.254
+      vnis_interface:
+        - "100/enp0s9"
+        - "200/enp0s10"
+    hosts: all
+    user: vagrant
+    become: yes
+    gather_facts: yes
+    roles:
+      - common
+      - vtep
