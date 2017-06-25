@@ -30,6 +30,7 @@
       - libc-ares-dev
       - python3-dev
       - libsystemd-dev
+      - bridge-utils
 
   - name: Add group frr with gid 92
     group:

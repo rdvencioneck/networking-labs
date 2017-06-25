@@ -1,7 +1,7 @@
 ---
   - name: VTEP1
     vars:
-      vtep_ip: 10.11.12.1
+      vtep_ip: 10.11.12.10
       asn: 65000
       RRs:
         - 10.11.12.254

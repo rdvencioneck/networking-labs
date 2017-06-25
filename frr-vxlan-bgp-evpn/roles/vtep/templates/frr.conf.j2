@@ -15,16 +15,16 @@ log timestamp precision 6
 router bgp {{asn}}
  bgp router-id {{vtep_ip}}
  no bgp default ipv4-unicast
- neighbor ebserh peer-group
- neighbor ebserh remote-as {{asn}}
- neighbor ebserh update-source dummy0
- neighbor ebserh capability extended-nexthop
+ neighbor fabric peer-group
+ neighbor fabric remote-as {{asn}}
+ neighbor fabric update-source dummy0
+ neighbor fabric capability extended-nexthop
  {% for rr in RRs %}
- neighbor {{rr}} peer-group ebserh
+ neighbor {{rr}} peer-group fabric
  {% endfor %}
  !
  address-family l2vpn evpn
-  neighbor ebserh activate
+  neighbor fabric activate
   advertise-all-vni
  exit-address-family
  vnc defaults

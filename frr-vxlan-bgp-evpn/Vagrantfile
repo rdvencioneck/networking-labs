@@ -26,4 +26,66 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     end
   end
 
+  config.vm.define "vtep2" do |vtep2|
+    vtep2.vm.host_name = "VTEP2"
+    vtep2.vm.network "private_network",
+                         ip: "10.11.12.20",
+                         virtualbox__intnet: "fabric"
+    vtep2.vm.network "private_network",
+                         virtualbox__intnet: "vtep2-vni100",
+                         auto_config: false
+    vtep2.vm.network "private_network",
+                         virtualbox__intnet: "vtep2-vni200",
+                         auto_config: false
+    vtep2.vm.provider "virtualbox" do |vb|
+      vb.memory = "512"
+    end
+    vtep2.vm.provision "ansible" do |ansible|
+      ansible.playbook = "vtep2.yml"
+    end
+  end
+
+  config.vm.define "rr" do |rr|
+    rr.vm.host_name = "RR"
+    rr.vm.network "private_network",
+                         ip: "10.11.12.254",
+                         virtualbox__intnet: "fabric"
+    rr.vm.provider "virtualbox" do |vb|
+      vb.memory = "512"
+    end
+    rr.vm.provision "ansible" do |ansible|
+      ansible.playbook = "RR.yml"
+    end
+  end
+
+  config.vm.define "vnihostvtep1" do |vnihostvtep1|
+    vnihostvtep1.vm.host_name = "vnihostvtep1"
+    vnihostvtep1.vm.network "private_network",
+                         virtualbox__intnet: "vtep1-vni100",
+                         ip: "192.168.1.10"
+    vnihostvtep1.vm.network "private_network",
+                         virtualbox__intnet: "vtep1-vni200",
+                         ip: "172.16.1.10"
+    vnihostvtep1.vm.provider "virtualbox" do |vb|
+      vb.memory = "256"
+    end
+  end
+
+  config.vm.define "vnihostvtep2" do |vnihostvtep2|
+    vnihostvtep2.vm.host_name = "vnihostvtep2"
+    vnihostvtep2.vm.network "private_network",
+                         virtualbox__intnet: "vtep2-vni100",
+                         ip: "192.168.1.20"
+    vnihostvtep2.vm.network "private_network",
+                         virtualbox__intnet: "vtep2-vni200",
+                         ip: "172.16.1.20"
+    vnihostvtep2.vm.provider "virtualbox" do |vb|
+      vb.memory = "256"
+    end
+    vnihostvtep2.vm.provision "shell", inline: <<-SHELL
+     ping -c 20 192.168.1.10
+     ping -c 20 172.16.1.10
+   SHELL
+  end
+
 end
