@@ -10,6 +10,13 @@
   - name: Create vxlan
     command: /src/frr/vxlan.sh
 
+
+  - name: Put VXLAN interface creation on boot
+    lineinfile:
+      path: /etc/rc.local
+      line: "/src/frr/vxlan.sh"
+      insertbefore: "exit 0"
+
   - name: Set Router config
     template:
       src: frr.conf.j2
