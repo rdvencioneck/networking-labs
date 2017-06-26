@@ -4,7 +4,7 @@
       name: apparmor
       state: stopped
 
-  - name: Remove Apparmor service
+  - name: Disable Apparmor service
     service:
       name: apparmor
       enabled: false
@@ -54,38 +54,18 @@
       comment: "FRR suite"
       shell: /sbin/nologin
 
-  - git:
+  - name: Clone repository
+    git:
       repo: 'https://github.com/vivek-cumulus/frr.git'
       dest: /src/frr/
       version: evpn
       clone: yes
 
-  - command: chdir=/src/frr/ ./bootstrap.sh
+  - name: ./bootstrap.sh
+    command: chdir=/src/frr/ ./bootstrap.sh
 
-  - command: chdir=/src/frr/ ./configure --prefix=/usr --enable-exampledir=/usr/share/doc/frr/examples/ --localstatedir=/var/run/frr --sbindir=/usr/lib/frr --sysconfdir=/etc/frr --enable-pimd --enable-watchfrr --enable-ospfclient=yes --enable-ospfapi=yes --enable-multipath=64 --enable-user=frr --enable-group=frr --enable-vty-group=frrvty --enable-configfile-mask=0640 --enable-logfile-mask=0640 --enable-rtadv --enable-tcp-zebra --enable-fpm --enable-systemd=yes --with-pkg-git-version --with-pkg-extra-version=-EVPN
-
-#  - command: chdir=/src/frr/ ./configure >
-#    --prefix=/usr
-#    --enable-exampledir=/usr/share/doc/frr/examples/
-#    --localstatedir=/var/run/frr
-#    --sbindir=/usr/lib/frr
-#    --sysconfdir=/etc/frr
-#    --enable-pimd
-#    --enable-watchfrr
-#    --enable-ospfclient=yes
-#    --enable-ospfapi=yes
-#    --enable-multipath=64
-#    --enable-user=frr
-#    --enable-group=frr
-#    --enable-vty-group=frrvty
-#    --enable-configfile-mask=0640
-#    --enable-logfile-mask=0640
-#    --enable-rtadv
-#    --enable-tcp-zebra
-#    --enable-fpm
-#    --enable-systemd=yes
-#    --with-pkg-git-version
-#    --with-pkg-extra-version=-EVPN
+  - name: configure
+    command: chdir=/src/frr/ ./configure --prefix=/usr --enable-exampledir=/usr/share/doc/frr/examples/ --localstatedir=/var/run/frr --sbindir=/usr/lib/frr --sysconfdir=/etc/frr --enable-pimd --enable-watchfrr --enable-ospfclient=yes --enable-ospfapi=yes --enable-multipath=64 --enable-user=frr --enable-group=frr --enable-vty-group=frrvty --enable-configfile-mask=0640 --enable-logfile-mask=0640 --enable-rtadv --enable-tcp-zebra --enable-fpm --enable-systemd=yes --with-pkg-git-version --with-pkg-extra-version=-EVPN
 
   - command: chdir=/src/frr/ {{ item }}
     with_items:
@@ -98,7 +78,6 @@
       path: /etc/iproute2/rt_protos
       block: |
         {{ item.port }} {{ item.proto }}
-      marker: "# {mark} ANSIBLE MANAGED BLOCK {{ item.port }}"
     with_items:
       - { port: 186, proto: bgp }
       - { port: 187, proto: isis }
