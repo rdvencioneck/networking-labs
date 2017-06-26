@@ -4,7 +4,6 @@
 VAGRANTFILE_API_VERSION = "2"
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
-  #config.vm.box = "ubuntu/xenial64"
   config.vm.box = "boxcutter/ubuntu1604"
 
   config.vm.define "vtep1" do |vtep1|
@@ -20,6 +19,8 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
                          auto_config: false
     vtep1.vm.provider "virtualbox" do |vb|
       vb.memory = "512"
+      vb.customize ["modifyvm", :id, "--nicpromisc3", "allow-all"]
+      vb.customize ["modifyvm", :id, "--nicpromisc4", "allow-all"]
     end
     vtep1.vm.provision "ansible" do |ansible|
       ansible.playbook = "vtep1.yml"
@@ -39,6 +40,8 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
                          auto_config: false
     vtep2.vm.provider "virtualbox" do |vb|
       vb.memory = "512"
+      vb.customize ["modifyvm", :id, "--nicpromisc3", "allow-all"]
+      vb.customize ["modifyvm", :id, "--nicpromisc4", "allow-all"]
     end
     vtep2.vm.provision "ansible" do |ansible|
       ansible.playbook = "vtep2.yml"
